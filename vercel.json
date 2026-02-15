@@ -1,17 +1,8 @@
 {
-    "buildCommand": "next build",
-    "outputDirectory": ".next",
-    "framework": "nextjs",
-    "functions": {
-        "api/*.py": {
-            "runtime": "@vercel/python@4.5.1",
-            "maxDuration": 60
-        }
-    },
     "rewrites": [
         {
-            "source": "/api/py/:path*",
-            "destination": "/api/:path*"
+            "source": "/api/download",
+            "destination": "/api/download"
         }
     ]
 }
