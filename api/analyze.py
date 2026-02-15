@@ -1,6 +1,8 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
+import tempfile
+import base64
 import traceback
 
 # ── yt-dlp ────────────────────────────────────────────────────────────────────
@@ -11,6 +13,9 @@ from supabase import create_client, Client
 
 SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
+# ── YouTube Cookies (base64-encoded Netscape cookies.txt) ─────────────────────
+YT_COOKIES_B64 = os.environ.get("YT_COOKIES_BASE64", "")
 
 
 def _supabase() -> Client | None:
@@ -29,21 +34,69 @@ def _cors_headers() -> dict:
     }
 
 
+def _get_cookies_path() -> str | None:
+    """
+    Decode the base64 cookies env var into a temp file
+    and return its path. Returns None if no cookies configured.
+    """
+    if not YT_COOKIES_B64:
+        return None
+    try:
+        raw = base64.b64decode(YT_COOKIES_B64)
+        tmp = tempfile.NamedTemporaryFile(
+            delete=False, suffix=".txt", mode="wb"
+        )
+        tmp.write(raw)
+        tmp.close()
+        return tmp.name
+    except Exception:
+        return None
+
+
 def _extract(url: str) -> dict:
     """
     Use yt-dlp to extract metadata + direct streaming URLs.
     We do NOT download anything to disk — only extract info.
     """
+    cookies_path = _get_cookies_path()
+
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
         # Prefer mp4 video + m4a audio (widely compatible)
         "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        # Use browser-like headers to reduce bot detection
+        "http_headers": {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
+        # Try different player clients to avoid bot detection
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["ios", "web"],
+            }
+        },
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+    # Add cookies if available
+    if cookies_path:
+        ydl_opts["cookiefile"] = cookies_path
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+    finally:
+        # Clean up temp cookie file
+        if cookies_path:
+            try:
+                os.unlink(cookies_path)
+            except OSError:
+                pass
 
     if info is None:
         raise ValueError("yt-dlp returned no info for this URL")
