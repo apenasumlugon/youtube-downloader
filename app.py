@@ -8,6 +8,17 @@ st.set_page_config(
     layout="centered"
 )
 
+# --- Configuração de Cookies (Bypass Bloqueios) ---
+# Tenta carregar cookies das Secrets do Streamlit Cloud
+if "YOUTUBE_COOKIES" in st.secrets:
+    with open("cookies.txt", "w") as f:
+        f.write(st.secrets["YOUTUBE_COOKIES"])
+    st.sidebar.success("🍪 Cookies carregados com sucesso!")
+elif os.path.exists("cookies.txt"):
+    st.sidebar.info("🍪 Arquivo local cookies.txt detectado.")
+else:
+    st.sidebar.warning("⚠️ Sem cookies configurados. Bloqueios podem ocorrer.")
+
 st.title("📺 YouTube Downloader")
 st.markdown("---")
 

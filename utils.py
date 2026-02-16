@@ -5,22 +5,18 @@ def get_video_info(url):
     """
     Recupera informações básicas do vídeo sem baixar.
     """
-    # Configuração anti-bloqueio
-    ydl_opts_base = {
+    # Configuração robusta com suporte a Cookies
+    ydl_opts = {
         'quiet': True,
         'no_warnings': True,
-        # Simula um cliente Android para evitar bloqueios de IP de datacenter
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web'],
-            }
-        },
-        # Força IPv4 pois IPv6 do datacenter as vezes é bloqueado
+        # Tenta usar cookies se o arquivo existir
+        'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+        # Força IPv4 (muitos datacenters tem ranges de IPv6 bloqueados pelo YT)
         'source_address': '0.0.0.0', 
     }
 
     try:
-        with yt_dlp.YoutubeDL(ydl_opts_base) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             return {
                 "title": info.get('title'),
@@ -34,23 +30,17 @@ def get_video_info(url):
 def download_media(url, format_type='mp4'):
     """
     Baixa o vídeo ou áudio.
-    format_type: 'mp4' (Vídeo) ou 'mp3' (Áudio)
-    Retorna o caminho do arquivo baixado.
     """
     output_folder = "downloads"
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    # Configuração base com estratégias anti-bloqueio
+    # Configuração de download com Cookies e IPv4
     ydl_opts = {
         'outtmpl': f'{output_folder}/%(title)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['android', 'web'],
-            }
-        },
+        'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
         'source_address': '0.0.0.0',
     }
 
