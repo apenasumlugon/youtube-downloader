@@ -55,7 +55,10 @@ def download_media(url, format_type='mp4'):
         })
     else:  # mp4
         ydl_opts.update({
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+            # Tenta pegar o melhor vídeo e melhor áudio disponíveis (qualquer formato)
+            'format': 'bestvideo+bestaudio/best',
+            # Força a mesclagem/conversão final para mp4
+            'merge_output_format': 'mp4',
         })
 
     try:
