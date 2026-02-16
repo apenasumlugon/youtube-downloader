@@ -92,3 +92,33 @@ if url:
 
 st.markdown("---")
 st.caption("Desenvolvido com ❤️ usando Streamlit e yt-dlp")
+
+# --- Área de Diagnóstico (Debug) ---
+with st.expander("🛠️ Diagnóstico do Sistema"):
+    import sys
+    st.write(f"Python Version: {sys.version}")
+    st.write(f"yt-dlp Version: {yt_dlp.version.__version__}")
+    
+    if os.path.exists("cookies.txt"):
+        st.success(f"Cookies.txt existe ({os.path.getsize('cookies.txt')} bytes)")
+    else:
+        st.error("Cookies.txt NÃO encontrado no sistema de arquivos.")
+        
+    st.write("Current Working Directory:", os.getcwd())
+    st.write("Files in Directory:", os.listdir())
+    
+    if url:
+        if st.button("Listar Formatos Disponíveis (Debug)"):
+            with st.spinner("Analisando formatos..."):
+                try:
+                    # Usa opções mínimas para evitar erros de extração
+                    debug_opts = {
+                        'quiet': True, 
+                        'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+                        'source_address': '0.0.0.0'
+                    }
+                    with yt_dlp.YoutubeDL(debug_opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        st.json(info.get('formats', []))
+                except Exception as e:
+                    st.error(f"Erro ao listar formatos: {e}")
