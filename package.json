@@ -1,7 +1,0 @@
-{
-    "name": "ytdown",
-    "version": "1.0.0",
-    "description": "YTDown - Baixar vídeos do YouTube em MP4 ou MP3",
-    "private": true,
-    "type": "module"
-}
