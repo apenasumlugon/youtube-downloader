@@ -1,6 +1,7 @@
 import streamlit as st
 import utils
 import os
+import yt_dlp
 
 st.set_page_config(
     page_title="YouTube Downloader",
