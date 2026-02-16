@@ -5,12 +5,22 @@ def get_video_info(url):
     """
     Recupera informações básicas do vídeo sem baixar.
     """
-    ydl_opts = {
+    # Configuração anti-bloqueio
+    ydl_opts_base = {
         'quiet': True,
         'no_warnings': True,
+        # Simula um cliente Android para evitar bloqueios de IP de datacenter
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],
+            }
+        },
+        # Força IPv4 pois IPv6 do datacenter as vezes é bloqueado
+        'source_address': '0.0.0.0', 
     }
+
     try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts_base) as ydl:
             info = ydl.extract_info(url, download=False)
             return {
                 "title": info.get('title'),
@@ -31,11 +41,17 @@ def download_media(url, format_type='mp4'):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    # Configuração base
+    # Configuração base com estratégias anti-bloqueio
     ydl_opts = {
         'outtmpl': f'{output_folder}/%(title)s.%(ext)s',
         'quiet': True,
         'no_warnings': True,
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['android', 'web'],
+            }
+        },
+        'source_address': '0.0.0.0',
     }
 
     if format_type == 'mp3':
@@ -50,8 +66,6 @@ def download_media(url, format_type='mp4'):
     else:  # mp4
         ydl_opts.update({
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            # Se quiser garantir que o output final seja mp4 mesmo se os streams forem diferentes
-            # 'merge_output_format': 'mp4', 
         })
 
     try:
